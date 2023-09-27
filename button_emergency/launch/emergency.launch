@@ -1,0 +1,5 @@
+<launch>   
+<node pkg="button_emergency" name="button_emergency_node" type="emergency.py" output="screen">
+    </node>
+
+</launch>

@@ -1,0 +1,10 @@
+<launch>
+
+    <include file="$(find linorobot)/launch/bringup.launch" />
+    <include file="$(find linorobot)/launch/navigate.launch" />
+   
+
+<node pkg="robot_button" name="robot_button" type="robot_delovoi.py" output="screen">
+    </node>
+
+</launch>

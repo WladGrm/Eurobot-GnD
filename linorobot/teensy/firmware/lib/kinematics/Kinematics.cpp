@@ -1,0 +1,135 @@
+#include "Arduino.h"
+#include "Kinematics.h"
+
+Kinematics::Kinematics(base robot_base, int motor_max_rpm, float wheel_diameter, float wheels_x_distance):
+    base_platform(robot_base),
+    max_rpm_(motor_max_rpm),
+    wheels_x_distance_(base_platform == DIFFERENTIAL_DRIVE ? 0 : wheels_x_distance),
+    //wheels_y_distance_(wheels_y_distance),
+    wheel_circumference_(PI * wheel_diameter),
+    total_wheels_(getTotalWheels(robot_base))
+{
+}
+
+//Прямая задача из vx vy wz в w1 w2 w3
+Kinematics::rpm Kinematics::calculateRPM(float linear_x, float linear_y, float angular_z)
+{
+    float rpm1;
+    float rpm2;
+    float rpm3;
+
+    //1 rad/s = 9.5493 rpm
+    rpm1 = (20*linear_x -11.5*linear_y -2*angular_z)*9.5493;
+    rpm2 = (0*linear_x + 23*linear_y - 2*angular_z)*9.5493;
+    rpm3 = (-20*linear_x - 11.5*linear_y - 2*angular_z)*9.5493;
+    //float linear_vel_x_mins;
+    //float linear_vel_y_mins;
+    //float angular_vel_z_mins;
+    //float tangential_vel;
+    //float x_rpm;
+    //float y_rpm;
+    //float tan_rpm;
+
+    //convert m/s to m/min
+    //linear_vel_x_mins = linear_x * 60;
+    //linear_vel_y_mins = linear_y * 60;
+
+    //convert rad/s to rad/min
+    //angular_vel_z_mins = angular_z * 60;
+
+
+//умножить на радиус робота
+    //tangential_vel = angular_vel_z_mins * wheels_x_distance_ ;
+
+    //x_rpm = linear_vel_x_mins / wheel_circumference_;
+    //y_rpm = linear_vel_y_mins / wheel_circumference_;
+    //tan_rpm = tangential_vel / wheel_circumference_;
+
+    Kinematics::rpm rpm;
+
+    //calculate for the target motor RPM and direction
+    //front-left motor
+    rpm.motor1 = rpm1;
+    rpm.motor1 = constrain(rpm.motor1, -max_rpm_, max_rpm_);
+
+    //reAR
+    rpm.motor2 = rpm2;
+    rpm.motor2 = constrain(rpm.motor2, -max_rpm_, max_rpm_);
+
+    //FRONT RIGHT
+    rpm.motor3 = rpm3;
+    rpm.motor3 = constrain(rpm.motor3, -max_rpm_, max_rpm_);
+
+
+    return rpm;
+}
+
+Kinematics::rpm Kinematics::getRPM(float linear_x, float linear_y, float angular_z)
+{
+    Kinematics::rpm rpm;
+
+    if(base_platform == DIFFERENTIAL_DRIVE || base_platform == SKID_STEER)
+    {
+        rpm = calculateRPM(linear_x, 0.0 , angular_z);
+    }
+    else if(base_platform == ACKERMANN || base_platform == ACKERMANN1)
+    {
+        rpm = calculateRPM(linear_x, 0.0, 0.0);
+    }
+    else if(base_platform == MECANUM)
+    {
+        rpm = calculateRPM(linear_x, linear_y, angular_z);
+    }
+
+    return rpm;
+}
+
+//Обратная из rpm1 rpm2 rpm3 в Vx Vy angZ
+Kinematics::velocities Kinematics::getVelocities(int rpm1, int rpm2, int rpm3)
+{
+    Kinematics::velocities vel;
+
+
+   //Считаем омеги в целом для каждого колеса [1/мин] / 60 -> [рад/c]
+    float w1;
+    float w2;
+    float w3;
+
+    w1 = (((float)(rpm1))/60)*6.2832;
+    w2 = (((float)(rpm2))/60)*6.2832;
+    w3 = (((float)(rpm3))/60)*6.2832;
+
+
+
+
+
+    //convert average revolutions per minute to revolutions per second
+    //average_rps_x = ((float)() /) / 60; // RPM
+    vel.linear_x = (0.0251*w1 + 0*w2 - 0.0251*w3)/1.62; // m/s
+
+    //convert average revolutions per minute in y axis to revolutions per second
+    //average_rps_y = ((float)(-rpm1 + rpm2 + rpm3 - rpm4) / total_wheels_) / 60; // RPM
+    if(base_platform == MECANUM)
+        vel.linear_y = (-0.0145*w1 + 0.029*w2 - 0.0145*w3)/1.56; // m/s
+    else
+        vel.linear_y = 0;
+
+    //convert average revolutions per minute to revolutions per second
+    //average_rps_a = ((float)(-rpm1 + rpm2 - rpm3 + rpm4) / total_wheels_) / 60;
+    vel.angular_z = (-0.1638*w1 -0.1638*w2 -0.1638*w3)/3; //  rad/s
+
+    return vel;
+}
+
+int Kinematics::getTotalWheels(base robot_base)
+{
+    switch(robot_base)
+    {
+        case DIFFERENTIAL_DRIVE:    return 2;
+        case ACKERMANN:             return 2;
+        case ACKERMANN1:            return 1;
+        case SKID_STEER:            return 4;
+        case MECANUM:               return 3;
+        default:                    return 3;
+    }
+}

@@ -1,0 +1,9 @@
+<launch>
+
+    <include file="$(find linorobot)/launch/ride.launch" />
+   
+
+<node pkg="button_start" name="button_start_node" type="servo_msg.py" output="screen">
+    </node>
+
+</launch>

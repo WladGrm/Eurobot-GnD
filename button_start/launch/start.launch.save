@@ -1,0 +1,11 @@
+<launch>
+
+    <include file="$(find linorobot)/launch/bringup.launch" />
+    <include file="$(find linorobot)/launch/navigate.launch" />
+    <include file="$(find button_emergenc)/launch/emergency.launch" />
+   
+
+<node pkg="button_start" name="button_start_node" type="start.py" output="screen">
+    </node>
+
+</launch>

@@ -1,0 +1,5 @@
+<launch>   
+<node pkg="button_start" name="button_start" type="start.py" output="screen">
+    </node>
+
+</launch>
